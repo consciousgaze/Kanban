@@ -83,7 +83,7 @@ Tables:
         that shows tree strucutre of each project which is a tree of tasks.
         The column "belonging_board_id" will be null unless the task is the root task of a
         project.
-        C: task_id, belonging_board_id, task_distance, decendent_task_id
+        C: task_id, task_distance, is_root, decendent_task_id
 
     actions:
         shows all possible actions

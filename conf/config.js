@@ -14,5 +14,5 @@ module.exports = {
     devl_db : 'kanban_dev',
     test : true,
     database: 'postgres'
-    // postgresql is supported
+    //Supported databases are postgresql
 }
