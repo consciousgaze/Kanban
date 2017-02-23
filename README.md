@@ -44,56 +44,66 @@ We can have "burn out" diagram or other diagrams based on projects.
 # Database Design
 Tables:
 
-    users:
-        list all users
-        C: user_id, user_name, description
+        users:
+            list all users
+            C: user_id, user_name, description
 
-    boards:
-        list all boards
-        C: baord_id, board_name, description
+        boards:
+            list all boards
+            C: baord_id, board_name, description
 
-    personnel:
-        show the contributing boards of users
-        C: board_id, user_id, rights
+        personnel:
+            show the contributing boards of users
+            C: board_id, user_id, rights
 
-    stages:
-        shows the stages of each board, stage "todo" of stage_seq 0 and stage "null" of stage_seq
-        -1 are required for each board. Stage name can be arbitraritly changed.
-        C: stage_id, belonging_board_id, stage_name, stage_seq, stage_description
+        stages:
+            shows the stages of each board, stage "todo" of stage_seq 0 and stage "null" of stage_seq
+            -1 are required for each board. Stage name can be arbitraritly changed.
+            C: stage_id, belonging_board_id, stage_name, stage_seq, description
 
-    tasks:
-        shows all the tasks, explains the descriptions, task size, types etc.
-        C: task_id, task_title, task_size, owner, task_description, task_type, stage_id
+        tasks:
+            shows all the tasks, explains the descriptions, task size, types etc.
+            C: task_id, task_title, task_size, owner, description, task_type, stage_id
 
-    task_types:
-        shows all task types including project root, module, feature and task.
-        this can be declared as enum type, but we do not want to rely on db functionalities
-        C: task_type_id, task_type_name
+        task_types:
+            shows all task types including project root, module, feature and task.
+            this can be declared as enum type, but we do not want to rely on db functionalities
+            C: task_type_id, task_type_name
 
-    tags:
-        shows all tags that has been created
-        C: tag_id, tag_name
+        tags:
+            shows all tags that has been created
+            C: tag_id, tag_name
 
-    task_tags:
-        shows task tags
-        C: task_id, tag_id
+        task_tags:
+            shows task tags
+            C: task_id, tag_id
 
-    projects:
-        shows the tasks relationships between each other. It is basically a closure table
-        that shows tree strucutre of each project which is a tree of tasks.
-        The column "belonging_board_id" will be null unless the task is the root task of a
-        project.
-        C: task_id, task_distance, is_root, decendent_task_id
+        projects:
+            shows the tasks relationships between each other. It is basically a closure table
+            that shows tree strucutre of each project which is a tree of tasks.
+            The column "belonging_board_id" will be null unless the task is the root task of a
+            project.
+            C: task_id, task_distance, decendent_task_id
 
-    actions:
-        shows all possible actions
-        C: action_id, action_name, action_description
+        actions:
+            shows all possible actions
+            C: action_id, action_name, action_description
 
-    editing_history:
-        show progressing operations on tasks, i.e., adding/removing sub task, changing stage,
-        moving task etc.
-        C: timestamp, task_id, action_id, action_target
+            current actions upon setting up
+            (action_id, action_name, description)" +
+            (0, 'create project', 'create a project')," +
+            (1, 'move stage', 'move a task to a new stage')," +
+            (2, 'move task', 'move a task to a different parent task')," +
+            (3, 'create task', 'create a new task as sub-task of an exisiting task')," +
+            (4, 'tag task', 'tag a task')," +
+            (5, 'change task type', 'change the type of a task');";
 
-    comments:
-        show comments on tasks
-        C: task_id, time_stamp, comments
+        editing_history:
+            show progressing operations on tasks, i.e., adding/removing sub task, changing stage,
+            moving task etc.
+            C: timestamp, task_id, action_id, action_target
+
+        comments:
+            show comments on tasks
+            C: comments, task_id, time_stamp, comments
+
