@@ -1,4 +1,6 @@
 var winston = require('winston');
+var config = require('../conf/config');
+
 var logger = new (winston.Logger)({
   transports: [
     new (winston.transports.Console)({
@@ -16,6 +18,14 @@ var logger = new (winston.Logger)({
     })
   ]
 });
+
+switch (config.database) {
+    case "postgres":
+        break;
+    default:
+        throw (new TypeError("Queris in " + config.database + " is not prepared yet."));
+}
+
 module.exports = {
     logger: logger
 }

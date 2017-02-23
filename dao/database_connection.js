@@ -3,6 +3,8 @@ var pg = require("pg");
 var logger = require('../util/util').logger;
 
 // initilize postgres database
+var queries = require('./implementation/pg_queries');
+
 function pg_init_database() {
     var postgres_config = config.db_config;
     var kanban_config = config.db_config;
@@ -16,9 +18,8 @@ function pg_init_database() {
     } else {
         kanban_config.database = config.prod_db;
     }
-
-    postgres_pool.query("SELECT 1 FROM pg_database WHERE datname='" +
-                        kanban_config.database + "';", [])
+    console.log(queries.check_db_exist);
+    postgres_pool.query(queries.check_db_exist, [kanban_config.database])
                  .then(res => {
                                pg_create_database(postgres_pool,
                                                   kanban_config,
@@ -32,14 +33,14 @@ function pg_create_database(postgres_pool, kanban_config, exist) {
     logger.log("info", kanban_config);
     if (!exist) {
         logger.log("info", kanban_config.database + " does not exist, creating.");
-        postgres_pool.query('CREATE DATABASE "' + kanban_config.database +
-                            '" OWNER "' + kanban_config.user + '";', [])
+        //postgres_pool.query(queries.create_db_with_owner, [kanban_config.database, kanban_config.user])
+        postgres_pool.query('CREATE DATABASE "' + kanban_config.database + '" OWNER ' +
+                            kanban_config.user + ";")
                      .then(res => {
                                     logger.log("info", kanban_config.database + " created.")
                                     var kanban_pool = new pg.Pool(kanban_config)
                                     pg_create_tables(kanban_pool)
-                                  }
-                          );
+                                  });
     } else {
         var kanban_pool = new pg.Pool(kanban_config)
         pg_create_tables(kanban_pool);
@@ -55,7 +56,7 @@ function pg_create_tables(kanban_pool) {
                             "user_id SERIAL,\n" +
                             "user_name text,\n" +
                             "description text,\n" +
-                            "PRIMARY KEY(user_id));";
+                            "PRIMARY KEY(user_name));";
 
     //    boards:
     //        list all boards
@@ -89,7 +90,7 @@ function pg_create_tables(kanban_pool) {
 
     //    tasks:
     //        shows all the tasks, explains the descriptions, task size, types etc.
-    //        C: task_id, task_title, task_size, owner, task_description, task_type, stage_id
+    //        C: task_id, task_title, task_size, owner, task_description, task_type, stage_id, root_or_leaf
     var create_tasks_table = "CREATE TABLE IF NOT EXISTS tasks (\n" +
                              "task_id SERIAL,\n" +
                              "task_title text,\n" +
@@ -135,7 +136,6 @@ function pg_create_tables(kanban_pool) {
                                "task_id integer,\n" +
                                "task_distance integer,\n" +
                                "decendent_task_id integer,\n" +
-                               "is_root boolean,\n" +
                                "PRIMARY KEY(task_id, decendent_task_id));";
 
     //    actions:
@@ -188,7 +188,14 @@ function pg_create_tables(kanban_pool) {
     kanban_pool.query(create_task_tags, []);
     kanban_pool.query(create_project_table, []);
     kanban_pool.query(create_action_table, [])
-               .then(res => kanban_pool.query(add_actions, []));
+               .then(res => kanban_pool.query(add_actions, []))
+               .catch(e => {
+                            if (e['code'] != 23505) {
+                                logger.log('error', e.stack);
+                                throw (e);
+                            }
+                           }
+               );
     kanban_pool.query(create_edit_history, []);
     kanban_pool.query(create_comments_table, []);
     kanban_pool.on('error', function (err) {throw (err)});
@@ -206,9 +213,32 @@ function pg_pool() {
     return pool;
 }
 
+function Pg_Pool() {
+    this.config = config.db_config;
+    if (config.test) {
+        this.config.database = config.devl_db;
+    } else {
+        this.config.database = config.prod_db;
+    }
+    this.pool = null;
+}
+
+Pg_Pool.prototype.init = function(query, list) {
+    this.pool = new pg.Pool(this.config);
+    this.pool.on('error', function(err) {throw (err)});
+    this.query = function(query, list) {
+        return this.pool.query(query, list);
+    }
+    return this.query(query, list);
+}
+
+Pg_Pool.prototype.query = function(query, list) {
+    return this.init(query, list);
+}
+
 switch (config.database) {
     case 'postgres':
-        var Pool = pg_pool;
+        var pool = new Pg_Pool();
         var database_init = pg_init_database;
         break;
     default:
@@ -216,6 +246,6 @@ switch (config.database) {
 }
 
 module.exports = {
-    Pool: Pool,
+    pool: pool,
     database_init: database_init
 }
