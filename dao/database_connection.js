@@ -18,7 +18,6 @@ function pg_init_database() {
     } else {
         kanban_config.database = config.prod_db;
     }
-    console.log(queries.check_db_exist);
     postgres_pool.query(queries.check_db_exist, [kanban_config.database])
                  .then(res => {
                                pg_create_database(postgres_pool,
@@ -225,7 +224,7 @@ function Pg_Pool() {
 
 Pg_Pool.prototype.init = function(query, list) {
     this.pool = new pg.Pool(this.config);
-    this.pool.on('error', function(err) {throw (err)});
+    this.pool.on('error', function(err) { logger.log('error', err.stack); throw(err)});
     this.query = function(query, list) {
         return this.pool.query(query, list);
     }

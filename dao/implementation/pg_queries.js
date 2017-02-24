@@ -49,7 +49,7 @@ var get_stage_id_by_seq = "SELECT stage_id FROM stage " +
 
 var get_stage_id_by_task = "SELECT stage_id from tasks where task_id = $1::int;";
 
-var get_board_id_by_stage = "SELECT belonging_board_id from stage where stage_id = $1::int;";
+var get_board_id_by_stage = "SELECT belonging_board_id from stage WHERE stage_id = $1::int;";
 
 var get_ancestors = "SELECT task_id, task_distance FROM projects " +
                     "WHERE decendent_task_id = $1::int;";
@@ -57,6 +57,14 @@ var get_ancestors = "SELECT task_id, task_distance FROM projects " +
 var get_decendent = "SELECT task_distance, decendent_task_id FROME projects " +
                     "WHERE task_id = $1::int;";
 
+var get_stage_ids_by_board = "SELECT stage_id FROM stage WHERE belonging_board_id = $1::int;";
+
+var get_tasks_by_stage = "SELECT task_id FROM tasks WHERE stage_id = $1::int;";
+
+var get_parent_count = "SELECT COUNT(*) FROM projects WHERE decendent_task_id = $1::int;";
+
+var get_task_children = "SELECT decendent_task_id FROM projects " +
+                        "WHERE task_distance = 1 AND task_id = $1::int;";
 
 // deletes
 var delete_from_projects = "DELETE FROM projects WHERE " +
@@ -98,5 +106,8 @@ module.exports = {
     get_stage_id_by_task: get_stage_id_by_task,
     get_board_id_by_stage: get_board_id_by_stage,
     check_user_exists: check_user_exists,
-    create_user: create_user
+    create_user: create_user,
+    get_tasks_by_stage: get_tasks_by_stage,
+    get_parent_count: get_parent_count,
+    get_stage_ids_by_board: get_stage_ids_by_board
 }

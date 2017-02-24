@@ -1,8 +1,11 @@
 module.exports = {
-    prod_server_config : {
-        port : '8888'
+    session_db: {
+        cookieSecret: 'myblog',
+        db: 'blog',
+        host: 'localhost',
+        port: 27017
     },
-    test_server_config : {
+    server_config : {
         port : '8888'
     },
     db_config : {

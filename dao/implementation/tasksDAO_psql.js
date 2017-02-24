@@ -67,7 +67,7 @@ function create_task(ancestor, title, description, size, user_id, task_type) {
 // move task
 function move_task(src, dst, task_id) {
     // TODO: ensure that projects are tree structures
-    async.series([ function() {
+    async.series([ function(callback) {
                     // remove task from all its current ancestors
                     pool.query(queries.get_ancestors, [task_id])
                         .then(res => {
@@ -76,14 +76,15 @@ function move_task(src, dst, task_id) {
                                 var anc_id = res.rows[i]['task_id'];
                                 var depth = res.rows[i]['task_distance'];
                                 if (anc_id != task_id) {
-                                    pool.query(queries.delete_from_projects, [anc_id, task_id]);
+                                    pool.query(queries.delete_from_projects, [anc_id, task_id])
                                         .then(function(){
                                         })
                                 }
                             }
                         });
+                    callback();
                     },
-                    function() {
+                    function(callback) {
                         // add task as a sub task of dst task
                         pool.query(queries.get_ancestors, [dst])
                             .then(res => {
@@ -94,7 +95,8 @@ function move_task(src, dst, task_id) {
                                     // add task_id as a decedent
                                     pool.query(queries.add_decendent, [anc_id, depth, task_id]);
                                 }
-                            })
+                            });
+                        callback();
                     }])
 }
 
@@ -120,6 +122,44 @@ function update_task_description(task_id, description) {
     pool.query(queries.update_task_description, [description, task_id]);
 }
 
+// get all root tasks in board
+function get_root_tasks(board_id, process_projects) {
+    var projects = [];
+    pool.query(queries.get_stage_ids_by_board, [board_id])
+        .then(res => {
+            async.each(res.rows, function(rlt, callback){
+                var stage_id = rlt['stage_id'];
+                pool.query(queries.get_tasks_by_stage, [stage_id])
+                    .then(res => {
+                        async.each(res.rows, function(rlt, callback_2) {
+                            var task_id = rlt['task_id'];
+                            pool.query(queries.get_parent_count, [task_id])
+                                .then(res => {
+                                        if (res.rows[0]['count'] == 1) {
+                                            projects.push(task_id);
+                                        }
+                                        callback_2();
+                                    });
+                        }, callback);
+                    });
+            }, function() {process_projects(projects)});
+        });
+}
+
+// get task children
+function get_task_children(task_id, process_children) {
+    pool.query(queries.get_task_children, [task_id])
+        then(res =>{
+            var decendents = []
+            var count = res.rows.length;
+            for (i = 0; i < count; i++) {
+                var dec_id = res.rows[i]['decendent_task_id'];
+                decendents.push(dec_id);
+            }
+            process_children(decedents);
+        });
+}
+
 // TODO:
 // update task tag
 
@@ -132,5 +172,8 @@ module.exports = {
     move_task: move_task,
     delete_task: delete_task,
     update_task_title: update_task_title,
-    update_task_description: update_task_description
+    update_task_description: update_task_description,
+    get_task_children: get_task_children,
+    get_root_tasks: get_root_tasks
+
 }

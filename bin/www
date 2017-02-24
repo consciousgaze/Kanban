@@ -4,6 +4,8 @@
  * Module dependencies.
  */
 
+console.log("If your database isn't set yet, run 'node ./bin/setup.js' first.");
+
 var app = require('../app');
 var debug = require('debug')('kanban:server');
 var http = require('http');
